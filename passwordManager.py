@@ -57,20 +57,30 @@ class PasswordManager:
             return False
     
     def add_password(self, service, password):
-        """Aggiunge una nuova password cifrata"""
+        """Aggiunge una nuova password cifrata, evitando duplicati"""
         if not self.cipher or not self.user_id:
             print("✗ Devi prima effettuare il login!")
             return False
         
         try:
+            # 1. Controllo se il servizio esiste già per questo utente
+            check_query = "SELECT id FROM user_credentials WHERE user_id = %s AND service = %s"
+            result = self.db.execute_query(check_query, (self.user_id, service))
+            
+            if result and len(result) > 0:
+                print(f"✗ Esiste già una password salvata per il servizio '{service}'!")
+                return False
+
+            # 2. Se non esiste, procedo con l'inserimento
             encrypted_pwd = self.cipher.encrypt(password.encode()).decode()
             
-            query = "INSERT INTO user_credentials (user_id, service, password) VALUES (%s, %s, %s)"
-            self.db.cursor.execute(query, (self.user_id, service, encrypted_pwd))
+            insert_query = "INSERT INTO user_credentials (user_id, service, password) VALUES (%s, %s, %s)"
+            self.db.cursor.execute(insert_query, (self.user_id, service, encrypted_pwd))
             self.db.conn.commit()
             
             print(f"✓ Password per '{service}' salvata con successo!")
             return True
+    
         except Exception as e:
             print(f"✗ Errore durante il salvataggio: {e}")
             return False

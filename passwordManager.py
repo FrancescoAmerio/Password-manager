@@ -18,8 +18,11 @@ class PasswordManager:
             check_query = "SELECT id FROM users WHERE username = %s"
             result = self.db.execute_query(check_query, (username,))
             
-            if result:
-                print(f"✗ Username '{username}' già esistente!")
+            if(len(username) < 3 or master_password < 3):
+                print(f"Username o password devono essere di almeno 3 caratteri")
+                return False
+            elif result:
+                print(f"Username '{username}' già esistente!")
                 return False
             
             # Inserisce il nuovo utente
@@ -27,10 +30,10 @@ class PasswordManager:
             self.db.cursor.execute(insert_query, (username, hashed_pwd))
             self.db.conn.commit()
             
-            print(f"✓ Utente '{username}' registrato con successo!")
+            print(f"Utente '{username}' registrato con successo!")
             return True
         except Exception as e:
-            print(f"✗ Errore durante la registrazione: {e}")
+            print(f"Errore durante la registrazione: {e}")
             return False
     
     def login(self, username, master_password):

@@ -26,17 +26,22 @@ class PasswordManagerGUI:
         self.clear_frames()
         self.login_frame = ctk.CTkFrame(self.root)
         self.login_frame.pack(padx=20, pady=20, fill="both", expand=True)
+        self.login_frame.columnconfigure(0, weight=1)
+        self.login_frame.columnconfigure(1, weight=1)
+        self.login_frame.columnconfigure(2, weight=1)
+        self.login_frame.columnconfigure(3, weight=1)
 
-        ctk.CTkLabel(self.login_frame, text="Username:").grid(row=0, column=0, padx=5, pady=5)
+
+        ctk.CTkLabel(self.login_frame, text="Username:").grid(row=0, column=1, padx=5, pady=5)
         self.username_entry = ctk.CTkEntry(self.login_frame, placeholder_text="Inserisci username")
-        self.username_entry.grid(row=0, column=1, padx=5, pady=5)
+        self.username_entry.grid(row=0, column=2, padx=5, pady=5)
 
-        ctk.CTkLabel(self.login_frame, text="Master Password:").grid(row=1, column=0, padx=5, pady=5)
+        ctk.CTkLabel(self.login_frame, text="Master Password:").grid(row=1, column=1, padx=5, pady=5)
         self.password_entry = ctk.CTkEntry(self.login_frame, show="*", placeholder_text="Inserisci password")
-        self.password_entry.grid(row=1, column=1, padx=5, pady=5)
+        self.password_entry.grid(row=1, column=2, padx=5, pady=5)
 
-        ctk.CTkButton(self.login_frame, text="Login", command=self.login).grid(row=2, column=0, pady=10)
-        ctk.CTkButton(self.login_frame, text="Registrati", command=self.register).grid(row=2, column=1, pady=10)
+        ctk.CTkButton(self.login_frame, text="Login", command=self.login).grid(row=2, column=1, pady=10)
+        ctk.CTkButton(self.login_frame, text="Registrati", command=self.register).grid(row=2, column=2, pady=10)
 
     # ---------------- MAIN ----------------
     def build_main_frame(self):

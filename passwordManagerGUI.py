@@ -2,8 +2,6 @@
 import customtkinter as ctk
 import tkinter.ttk as ttk
 from tkinter import messagebox
-# from passwordManager import PasswordManager
-# from connection import DatabaseConnection
 
 
 class PasswordManagerGUI:
@@ -54,6 +52,8 @@ class PasswordManagerGUI:
         left_frame.pack(side="left", fill="y", padx=10, pady=10)
 
         ctk.CTkButton(left_frame, text="Aggiorna password", command=self.show_update_form).pack(pady=5)
+        ctk.CTkButton(left_frame, text="Mostra password", command=self.show_password).pack(pady=5)
+        ctk.CTkButton(left_frame, text="Copia password", command=self.copy_password).pack(pady=5)
         ctk.CTkButton(left_frame, text="Elimina password", command=self.delete_password).pack(pady=5)
         ctk.CTkButton(left_frame, text="Logout", command=self.logout).pack(pady=5)
 
@@ -92,19 +92,24 @@ class PasswordManagerGUI:
     def show_add_form(self):
         if self.add_form:
             self.add_form.destroy()
+        if self.update_form:
+            self.update_form.destroy()
 
         self.add_form = ctk.CTkFrame(self.main_frame)
         self.add_form.pack(padx=10, pady=10, fill="x")
 
-        ctk.CTkLabel(self.add_form, text="Servizio:").grid(row=0, column=0, padx=5, pady=5)
+        ctk.CTkLabel(self.add_form, text="Aggiungi nuovo servizio:").grid(row=0, column=0, columnspan=2, padx=5, pady=5)
+
+        ctk.CTkLabel(self.add_form, text="Servizio:").grid(row=1, column=0, padx=5, pady=5)
         self.new_service_entry = ctk.CTkEntry(self.add_form, placeholder_text="Nome servizio")
-        self.new_service_entry.grid(row=0, column=1, padx=5, pady=5)
+        self.new_service_entry.grid(row=1, column=1, padx=5, pady=5)
 
-        ctk.CTkLabel(self.add_form, text="Password:").grid(row=1, column=0, padx=5, pady=5)
+        ctk.CTkLabel(self.add_form, text="Password:").grid(row=2, column=0, padx=5, pady=5)
         self.new_pwd_entry = ctk.CTkEntry(self.add_form, show="*", placeholder_text="Inserisci password")
-        self.new_pwd_entry.grid(row=1, column=1, padx=5, pady=5)
+        self.new_pwd_entry.grid(row=2, column=1, padx=5, pady=5)
 
-        ctk.CTkButton(self.add_form, text="Salva", command=self.save_new_password).grid(row=2, column=0, columnspan=2, pady=10)
+        ctk.CTkButton(self.add_form, text="Salva", command=self.save_new_password).grid(row=3, column=1, columnspan=1, pady=10)
+        ctk.CTkButton(self.add_form, text="Annulla", command=self.build_main_frame).grid(row=3, column=0, columnspan=1, pady=10)
 
     def save_new_password(self):
         service = self.new_service_entry.get()
@@ -126,7 +131,7 @@ class PasswordManagerGUI:
         services = self.manager.list_services()
         if services:
             for service_id, service_name in services:
-                pwd = self.manager.get_password(service_name)
+                pwd =  "*****"
                 self.table.insert("", "end", values=(service_name, pwd))
 
     def clear_frames(self):
@@ -164,6 +169,8 @@ class PasswordManagerGUI:
         # Se esiste già un form, lo distruggo
         if self.update_form:
             self.update_form.destroy()
+        if self.add_form:
+            self.add_form.destroy()
 
         self.update_form = ctk.CTkFrame(self.main_frame)
         self.update_form.pack(padx=10, pady=10, fill="x")
@@ -174,9 +181,41 @@ class PasswordManagerGUI:
         self.update_pwd_entry = ctk.CTkEntry(self.update_form, show="*", placeholder_text="Inserisci nuova password")
         self.update_pwd_entry.grid(row=1, column=1, padx=5, pady=5)
 
-        ctk.CTkButton(self.update_form, text="Aggiorna", command=lambda: self.save_updated_password(service)).grid(row=2, column=0, columnspan=2, pady=10)
+        ctk.CTkButton(self.update_form, text="Aggiorna", command=self.save_updated_password).grid(row=2, column=1, columnspan=1, pady=10)
+        ctk.CTkButton(self.update_form, text="Annulla", command=self.build_main_frame).grid(row=2, column=0, columnspan=1, pady=10)
 
-    def save_updated_password(self, service):
+    def show_password(self):
+        selected = self.table.selection()
+        if not selected:
+            messagebox.showerror("Errore", "Seleziona un servizio dalla tabella")
+            return
+        service = self.table.item(selected[0])["values"][0]
+        pwd =self.manager.get_password(service)
+        # messagebox.showinfo("Password: ", pwd)
+        self.table.item(selected[0], values=(service, pwd))
+        # Dopo 5 secondi torna a nasconderla
+        self.root.after(4000, lambda: self.table.item(selected[0], values=(service, "*****")))
+
+    def copy_password(self):
+        selected = self.table.selection()
+        if not selected:
+            messagebox.showerror("Errore", "Seleziona un servizio dalla tabella")
+            return
+        service = self.table.item(selected[0])["values"][0]
+        pwd =self.manager.get_password(service)
+        self.root.clipboard_clear()
+        self.root.clipboard_append(pwd)
+        self.root.update()
+        if(pwd):
+            messagebox.showinfo("Copiata", "Password copiata negli appunti")
+
+
+    def save_updated_password(self):
+        selected = self.table.selection()
+        if not selected:
+            messagebox.showerror("Errore", "Seleziona un servizio dalla tabella")
+            return
+        service = self.table.item(selected[0])["values"][0]
         new_pwd = self.update_pwd_entry.get()
         if new_pwd:
             self.manager.update_password(service, new_pwd)
@@ -186,6 +225,7 @@ class PasswordManagerGUI:
             self.update_form = None
         else:
             messagebox.showerror("Errore", "Inserisci una nuova password")
+
 
     def delete_password(self):
         selected = self.table.selection()

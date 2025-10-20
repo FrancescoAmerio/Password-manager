@@ -91,7 +91,7 @@ class PasswordManager:
     def get_password(self, service):
         """Recupera e decifra una password"""
         if not self.cipher or not self.user_id:
-            print("✗ Devi prima effettuare il login!")
+            print(" Devi prima effettuare il login!")
             return None
         
         try:
@@ -103,16 +103,16 @@ class PasswordManager:
                 decrypted_pwd = self.cipher.decrypt(encrypted_pwd.encode()).decode()
                 return decrypted_pwd
             else:
-                print(f"✗ Nessuna password trovata per '{service}'")
+                print(f" Nessuna password trovata per '{service}'")
                 return None
         except Exception as e:
-            print(f"✗ Errore durante il recupero: {e}")
+            print(f" Errore durante il recupero: {e}")
             return None
     
     def list_services(self):
         """Elenca tutti i servizi salvati"""
         if not self.user_id:
-            print("✗ Devi prima effettuare il login!")
+            print(" Devi prima effettuare il login!")
             return []
         
         try:
@@ -120,13 +120,13 @@ class PasswordManager:
             result = self.db.execute_query(query, (self.user_id,))
             return result if result else []
         except Exception as e:
-            print(f"✗ Errore durante il recupero dei servizi: {e}")
+            print(f" Errore durante il recupero dei servizi: {e}")
             return []
     
     def update_password(self, service, new_password):
         """Aggiorna una password esistente"""
         if not self.cipher or not self.user_id:
-            print("✗ Devi prima effettuare il login!")
+            print(" Devi prima effettuare il login!")
             return False
         
         try:
@@ -137,19 +137,19 @@ class PasswordManager:
             self.db.conn.commit()
             
             if self.db.cursor.rowcount > 0:
-                print(f"✓ Password per '{service}' aggiornata con successo!")
+                print(f" Password per '{service}' aggiornata con successo!")
                 return True
             else:
-                print(f"✗ Servizio '{service}' non trovato!")
+                print(f" Servizio '{service}' non trovato!")
                 return False
         except Exception as e:
-            print(f"✗ Errore durante l'aggiornamento: {e}")
+            print(f" Errore durante l'aggiornamento: {e}")
             return False
     
     def delete_password(self, service):
         """Elimina una password"""
         if not self.user_id:
-            print("✗ Devi prima effettuare il login!")
+            print(" Devi prima effettuare il login!")
             return False
         
         try:
@@ -158,11 +158,11 @@ class PasswordManager:
             self.db.conn.commit()
             
             if self.db.cursor.rowcount > 0:
-                print(f"✓ Password per '{service}' eliminata con successo!")
+                print(f" Password per '{service}' eliminata con successo!")
                 return True
             else:
-                print(f"✗ Servizio '{service}' non trovato!")
+                print(f" Servizio '{service}' non trovato!")
                 return False
         except Exception as e:
-            print(f"✗ Errore durante l'eliminazione: {e}")
+            print(f" Errore durante l'eliminazione: {e}")
             return False

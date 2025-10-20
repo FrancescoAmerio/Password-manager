@@ -1,6 +1,6 @@
 # ---------------- MAIN ----------------
 from connection import DatabaseConnection
-from passwordManagerGUI import PasswordManagerGUI
+from PasswordManagerGUI import PasswordManagerGUI
 from passwordManager import PasswordManager
 import customtkinter as ctk
 

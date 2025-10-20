@@ -1,8 +1,9 @@
 # ---------------- MAIN ----------------
 from connection import DatabaseConnection
-from PasswordManagerGUI import PasswordManagerGUI
+from passwordManagerGUI import PasswordManagerGUI
 from passwordManager import PasswordManager
 import customtkinter as ctk
+
 
 
 if __name__ == "__main__":

@@ -31,7 +31,6 @@ class PasswordManagerGUI:
 
         self.build_login_frame()
 
-    # ---------------- LOGIN ----------------
     def build_login_frame(self) -> None:
         '''
         Costruisce l’interfaccia grafica per il login.
@@ -71,7 +70,6 @@ class PasswordManagerGUI:
         ctk.CTkButton(self.login_frame, text="Registrati", command=self.register).grid(row=2, column=2, pady=10)
 
 
-    # ---------------- MAIN ----------------
     def build_main_frame(self)-> None:
         '''
         Costruisce l’interfaccia principale dopo il login.
@@ -136,7 +134,6 @@ class PasswordManagerGUI:
 
         self.refresh_table()
 
-    # ---------------- FORM AGGIUNTA ----------------
     def show_add_form(self)-> None:
         '''
         Mostra il form per aggiungere una nuova password.
@@ -208,7 +205,6 @@ class PasswordManagerGUI:
         else:
             messagebox.showerror("Errore", "Compila tutti i campi")
 
-    # ---------------- UTILS ----------------
     def refresh_table(self)-> None:
         '''
         Aggiorna la tabella dei servizi mostrata nell’interfaccia.
@@ -256,7 +252,6 @@ class PasswordManagerGUI:
         if self.main_frame:
             self.main_frame.pack_forget()
 
-    # ---------------- LOGICA ----------------
     def login(self)-> None:
         '''
         Gestisce il processo di login dell’utente.

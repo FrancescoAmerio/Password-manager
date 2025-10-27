@@ -197,8 +197,11 @@ class PasswordManagerGUI:
         service = self.new_service_entry.get()
         pwd = self.new_pwd_entry.get()
         if service and pwd:
-            self.manager.add_password(service, pwd)
-            messagebox.showinfo("OK", f"Password per {service} salvata!")
+            added = self.manager.add_password(service, pwd)
+            if added:
+                messagebox.showinfo("OK", f"Password per {service} salvata!")
+            else:
+                messagebox.showinfo("Errore", f"Password per {service} già esistente!")
             self.refresh_table()
             self.add_form.destroy()
             self.add_form = None
@@ -239,7 +242,6 @@ class PasswordManagerGUI:
         Funzionamento:
         - Se il frame di login è presente, lo rimuove temporaneamente dall’interfaccia (`pack_forget`)
         - Se il frame principale è presente, lo rimuove temporaneamente dall’interfaccia (`pack_forget`)
-        - Non elimina i frame, ma li nasconde per permettere la ricostruzione di nuove schermate
 
         Parametri:
         Nessuno

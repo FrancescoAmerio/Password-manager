@@ -85,7 +85,7 @@ class PasswordManager:
     
     def add_password(self, service: str, password: str) -> bool:
         '''
-        Aggiunge una nuova password cifrata, evitando duplicati.
+        Aggiunge un nuovo servizio con una nuova password cifrata, evitando duplicati.
 
         Parametri:
         service (str) -> nome del servizio

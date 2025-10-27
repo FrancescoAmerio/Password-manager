@@ -5,8 +5,19 @@ from passwordManager import PasswordManager
 import customtkinter as ctk
 
 
-
-if __name__ == "__main__":
+def main() -> None:
+    '''
+    Funzione principale del programma.
+    
+    - Apre la connessione al database
+    - Inizializza il gestore delle password
+    - Configura la finestra principale dell'interfaccia grafica
+    - Avvia il ciclo principale dell'applicazione
+    - Chiude la connessione al database alla fine
+     
+    Valore di ritorno:
+    None
+    '''
     db = DatabaseConnection()
     db.open()
     pm = PasswordManager(db)
@@ -21,3 +32,7 @@ if __name__ == "__main__":
     app = PasswordManagerGUI(root, pm)
     root.mainloop()
     db.close()
+
+
+if __name__ == "__main__":
+    main()

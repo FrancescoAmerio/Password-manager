@@ -1,16 +1,31 @@
 from cryptography.fernet import Fernet
 from security import SecurityUtils
+from typing import Optional, Any
 
 class PasswordManager:
-    def __init__(self, db_connection):
-        """Inizializza il gestore password con connessione DB"""
+    def __init__(self, db_connection) -> None:
+        '''
+        Costruttore della classe PasswordManager.
+
+        Parametri:
+        db_connection -> connessione al database
+        '''
         self.db = db_connection
-        self.cipher = None
-        self.user_id = None
+        self.cipher: Optional[Fernet] = None
+        self.user_id: Optional[int] = None
         
 
-    def register_user(self, username, master_password):
-        """Registra un nuovo utente"""
+    def register_user(self, username: str, master_password: str) -> bool:
+        '''
+        Registra un nuovo utente.
+
+        Parametri:
+        username (str) -> nome utente
+        master_password (str) -> password principale
+
+        Valore di ritorno:
+        bool -> True se la registrazione è avvenuta con successo, False altrimenti
+        '''
         try:
             hashed_pwd = SecurityUtils.hash_password(master_password)
             
@@ -18,8 +33,8 @@ class PasswordManager:
             check_query = "SELECT id FROM users WHERE username = %s"
             result = self.db.execute_query(check_query, (username,))
             
-            if(len(username) < 3 or master_password < 3):
-                print(f"Username o password devono essere di almeno 3 caratteri")
+            if (len(username) < 3 or len(master_password) < 3):
+                print("Username o password devono essere di almeno 3 caratteri")
                 return False
             elif result:
                 print(f"Username '{username}' già esistente!")
@@ -36,8 +51,17 @@ class PasswordManager:
             print(f"Errore durante la registrazione: {e}")
             return False
     
-    def login(self, username, master_password):
-        """Effettua il login e inizializza la cifratura"""
+    def login(self, username: str, master_password: str) -> bool:
+        '''
+        Effettua il login e inizializza la cifratura.
+
+        Parametri:
+        username (str) -> nome utente
+        master_password (str) -> password principale
+
+        Valore di ritorno:
+        bool -> True se il login è avvenuto con successo, False altrimenti
+        '''
         try:
             hashed_pwd = SecurityUtils.hash_password(master_password)
             
@@ -50,31 +74,40 @@ class PasswordManager:
                 salt = username.encode()
                 key = SecurityUtils.derive_key(master_password, salt)
                 self.cipher = Fernet(key)
-                print(f"✓ Login effettuato come '{username}'!")
+                print(f" Login effettuato come '{username}'!")
                 return True
             else:
-                print("✗ Credenziali non valide!")
+                print(" Credenziali non valide!")
                 return False
         except Exception as e:
-            print(f"✗ Errore durante il login: {e}")
+            print(f" Errore durante il login: {e}")
             return False
     
-    def add_password(self, service, password):
-        """Aggiunge una nuova password cifrata, evitando duplicati"""
+    def add_password(self, service: str, password: str) -> bool:
+        '''
+        Aggiunge una nuova password cifrata, evitando duplicati.
+
+        Parametri:
+        service (str) -> nome del servizio
+        password (str) -> password da salvare
+
+        Valore di ritorno:
+        bool -> True se la password è stata salvata, False altrimenti
+        '''
         if not self.cipher or not self.user_id:
-            print("✗ Devi prima effettuare il login!")
+            print(" Devi prima effettuare il login!")
             return False
         
         try:
-            # 1. Controllo se il servizio esiste già per questo utente
+            # Controllo se il servizio esiste già per questo utente
             check_query = "SELECT id FROM user_credentials WHERE user_id = %s AND service = %s"
             result = self.db.execute_query(check_query, (self.user_id, service))
             
             if result and len(result) > 0:
-                print(f"✗ Esiste già una password salvata per il servizio '{service}'!")
+                print(f" Esiste già una password salvata per il servizio '{service}'!")
                 return False
 
-            # 2. Se non esiste, procedo con l'inserimento
+            # Inserimento nuova password
             encrypted_pwd = self.cipher.encrypt(password.encode()).decode()
             
             insert_query = "INSERT INTO user_credentials (user_id, service, password) VALUES (%s, %s, %s)"
@@ -88,8 +121,17 @@ class PasswordManager:
             print(f"✗ Errore durante il salvataggio: {e}")
             return False
     
-    def get_password(self, service):
-        """Recupera e decifra una password"""
+    def get_password(self, service: str) -> Optional[str]:
+        '''
+        Recupera e decifra una password.
+
+        Parametri:
+        service (str) -> nome del servizio
+
+        Valore di ritorno:
+        str -> password decifrata
+        None -> se non trovata o in caso di errore
+        '''
         if not self.cipher or not self.user_id:
             print(" Devi prima effettuare il login!")
             return None
@@ -109,8 +151,13 @@ class PasswordManager:
             print(f" Errore durante il recupero: {e}")
             return None
     
-    def list_services(self):
-        """Elenca tutti i servizi salvati"""
+    def list_services(self) -> list[tuple[Any, ...]]:
+        '''
+        Elenca tutti i servizi salvati.
+
+        Valore di ritorno:
+        list[tuple] -> lista di tuple contenenti id e nome del servizio
+        '''
         if not self.user_id:
             print(" Devi prima effettuare il login!")
             return []
@@ -123,8 +170,17 @@ class PasswordManager:
             print(f" Errore durante il recupero dei servizi: {e}")
             return []
     
-    def update_password(self, service, new_password):
-        """Aggiorna una password esistente"""
+    def update_password(self, service: str, new_password: str) -> bool:
+        '''
+        Aggiorna una password esistente.
+
+        Parametri:
+        service (str) -> nome del servizio
+        new_password (str) -> nuova password da salvare
+
+        Valore di ritorno:
+        bool -> True se aggiornata con successo, False altrimenti
+        '''
         if not self.cipher or not self.user_id:
             print(" Devi prima effettuare il login!")
             return False
@@ -146,8 +202,16 @@ class PasswordManager:
             print(f" Errore durante l'aggiornamento: {e}")
             return False
     
-    def delete_password(self, service):
-        """Elimina una password"""
+    def delete_password(self, service: str) -> bool:
+        '''
+        Elimina una password.
+
+        Parametri:
+        service (str) -> nome del servizio
+
+        Valore di ritorno:
+        bool -> True se eliminata con successo, False altrimenti
+        '''
         if not self.user_id:
             print(" Devi prima effettuare il login!")
             return False

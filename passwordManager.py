@@ -27,29 +27,35 @@ class PasswordManager:
         bool -> True se la registrazione è avvenuta con successo, False altrimenti
         '''
         try:
-            hashed_pwd = SecurityUtils.hash_password(master_password)
-            
+            if len(username) < 3 or len(master_password) < 3:
+                print("Username o password devono essere di almeno 3 caratteri")
+                return False
+
             # Verifica se l'utente esiste già
             check_query = "SELECT id FROM users WHERE username = %s"
             result = self.db.execute_query(check_query, (username,))
-            
-            if (len(username) < 3 or len(master_password) < 3):
-                print("Username o password devono essere di almeno 3 caratteri")
-                return False
-            elif result:
+
+            if result:
                 print(f"Username '{username}' già esistente!")
                 return False
-            
-            # Inserisce il nuovo utente
-            insert_query = "INSERT INTO users (username, password) VALUES (%s, %s)"
-            self.db.cursor.execute(insert_query, (username, hashed_pwd))
+
+            # 1) genera un salt casuale
+            salt = SecurityUtils.generate_salt()
+
+            # 2) calcola l'hash usando password + salt
+            hashed_pwd = SecurityUtils.hash_password(master_password, salt)
+
+            # 3) inserisce il nuovo utente con hash + salt
+            insert_query = "INSERT INTO users (username, password, salt) VALUES (%s, %s, %s)"
+            self.db.cursor.execute(insert_query, (username, hashed_pwd, salt))
             self.db.conn.commit()
-            
+
             print(f"Utente '{username}' registrato con successo!")
             return True
         except Exception as e:
             print(f"Errore durante la registrazione: {e}")
             return False
+
     
     def login(self, username: str, master_password: str) -> bool:
         '''
@@ -63,25 +69,35 @@ class PasswordManager:
         bool -> True se il login è avvenuto con successo, False altrimenti
         '''
         try:
-            hashed_pwd = SecurityUtils.hash_password(master_password)
-            
-            query = "SELECT id FROM users WHERE username = %s AND password = %s"
-            result = self.db.execute_query(query, (username, hashed_pwd))
-            
-            if result and len(result) > 0:
-                self.user_id = result[0][0]
-                # Usa username come salt
-                salt = username.encode()
-                key = SecurityUtils.derive_key(master_password, salt)
-                self.cipher = Fernet(key)
-                print(f" Login effettuato come '{username}'!")
-                return True
-            else:
+            # Recupero id, hash e salt per quello username
+            query = "SELECT id, password, salt FROM users WHERE username = %s"
+            result = self.db.execute_query(query, (username,))
+
+            if not result:
                 print(" Credenziali non valide!")
                 return False
+
+            user_id, stored_hash, salt = result[0]  # salt è bytes (VARBINARY)
+
+            # Verifico la password usando hash + salt
+            if not SecurityUtils.verify_password(master_password, salt, stored_hash):
+                print(" Credenziali non valide!")
+                return False
+
+            # Login OK: salvo id utente
+            self.user_id = user_id
+
+            # Uso lo stesso salt per derivare la chiave di cifratura
+            key = SecurityUtils.derive_key(master_password, salt)
+            self.cipher = Fernet(key)
+
+            print(f" Login effettuato come '{username}'!")
+            return True
+
         except Exception as e:
             print(f" Errore durante il login: {e}")
             return False
+
     
     def add_password(self, service: str, password: str) -> bool:
         '''

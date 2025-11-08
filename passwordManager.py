@@ -114,11 +114,11 @@ class PasswordManager:
             self.db.cursor.execute(insert_query, (self.user_id, service, encrypted_pwd))
             self.db.conn.commit()
             
-            print(f"✓ Password per '{service}' salvata con successo!")
+            print(f" Password per '{service}' salvata con successo!")
             return True
     
         except Exception as e:
-            print(f"✗ Errore durante il salvataggio: {e}")
+            print(f" Errore durante il salvataggio: {e}")
             return False
     
     def get_password(self, service: str) -> Optional[str]:
@@ -169,7 +169,41 @@ class PasswordManager:
         except Exception as e:
             print(f" Errore durante il recupero dei servizi: {e}")
             return []
-    
+        
+    def search_services(self, keyword: str) -> list[tuple[Any, ...]]:
+        '''
+        Cerca servizi salvati che contengono una determinata parola chiave.
+
+        Parametri:
+        keyword (str) -> testo da cercare all’interno del nome del servizio
+
+        Valore di ritorno:
+        list[tuple] -> lista di tuple contenenti id e nome del servizio
+        '''
+        if not self.user_id:
+            print("Devi prima effettuare il login!")
+            return []
+
+        try:
+            query = """
+                SELECT id, service 
+                FROM user_credentials 
+                WHERE user_id = %s AND service LIKE %s 
+                ORDER BY service
+            """
+            # '%keyword%' permette di cercare la parola anche nel mezzo del nome
+            result = self.db.execute_query(query, (self.user_id, f"%{keyword}%"))
+            
+            if result and len(result) > 0:
+                print(f"Trovati {len(result)} servizi che contengono '{keyword}':")
+                return result
+            else:
+                print(f"Nessun servizio trovato per '{keyword}'.")
+                return []
+        except Exception as e:
+            print(f"Errore durante la ricerca: {e}")
+            return []
+
     def update_password(self, service: str, new_password: str) -> bool:
         '''
         Aggiorna una password esistente.

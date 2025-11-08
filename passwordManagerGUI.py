@@ -17,6 +17,7 @@ class PasswordManagerGUI:
         - Inizializza la finestra principale con titolo "Password Manager"
         - Definisce i frame principali (login, main, tabella, form di aggiunta e aggiornamento)
         - Avvia la costruzione dell’interfaccia di login
+        - La variabile search_mode serve per capire se costruire il main frame con tutti i servizi o solo quelli cercati
         '''
         self.root = root
         self.manager = manager
@@ -27,6 +28,7 @@ class PasswordManagerGUI:
         self.table = None
         self.add_form = None
         self.update_form = None
+        self.search_mode: bool = False
 
 
         self.build_login_frame()
@@ -107,8 +109,21 @@ class PasswordManagerGUI:
         right_frame = ctk.CTkFrame(self.main_frame)
         right_frame.pack(side="right", fill="both", expand=True, padx=10, pady=10)
 
-        add_button = ctk.CTkButton(right_frame, text="+", width=40, command=self.show_add_form)
-        add_button.pack(anchor="ne", pady=5, padx=5)
+        # --- Barra superiore per i pulsanti ---
+        top_bar = ctk.CTkFrame(right_frame)
+        top_bar.pack(fill="x", pady=5, padx=5)
+
+        # Pulsante "🔍" a sinistra
+        add_button_left = ctk.CTkButton(top_bar, text="🔍", width=40, command=self.change_search_mode)
+        add_button_left.pack(side="left", padx=0)
+
+        # Campo di testo accanto al pulsante di sinistra
+        self.search_entry = ctk.CTkEntry(top_bar, width=200, placeholder_text="Cerca servizio...")
+        self.search_entry.pack(side="left", padx=1)
+
+        # Pulsante "+" a destra
+        add_button_right = ctk.CTkButton(top_bar, text="+", width=40, command=self.show_add_form)
+        add_button_right.pack(side="right", padx=0)
 
         
         # Stile scuro per la tabella
@@ -208,28 +223,32 @@ class PasswordManagerGUI:
         else:
             messagebox.showerror("Errore", "Compila tutti i campi")
 
-    def refresh_table(self)-> None:
-        '''
-        Aggiorna la tabella dei servizi mostrata nell’interfaccia.
+    def refresh_table(self, keyword: str = "")-> None:
+        """
+        Aggiorna la tabella dei servizi mostrata nell'interfaccia.
 
         Funzionamento:
-        - Cancella tutte le righe attualmente presenti nella tabella
-        - Recupera la lista dei servizi dal manager
+        - Cancella tutte le righe attualmente presenti nella tabella.
+        - Se `search_mode` è attivo:
+            • recupera solo i servizi che corrispondono al testo passato in `keyword`
+        - Altrimenti recupera tutti i servizi dell'utente.
         - Per ogni servizio trovato:
             • Inserisce una nuova riga nella tabella
             • Mostra il nome del servizio
             • Mostra la password oscurata con asterischi
 
         Parametri:
-        Nessuno
+        keyword (str, opzionale) -> testo da cercare nei servizi; default è stringa vuota
 
         Valore di ritorno:
         None
-        '''
+        """
         for row in self.table.get_children():
             self.table.delete(row)
-
-        services = self.manager.list_services()
+        if self.search_mode:
+            services = self.manager.search_services(keyword)
+        else:
+            services = self.manager.list_services()
         if services:
             for service_id, service_name in services:
                 pwd =  "*****"
@@ -513,4 +532,21 @@ class PasswordManagerGUI:
         messagebox.showinfo("Logout", "Logout effettuato")
         self.build_login_frame()
 
+    def change_search_mode(self) -> None:
+        """
+        Attiva o disattiva la modalità ricerca dell'interfaccia.
 
+        Funzionamento:
+        - Inverte il valore booleano di `self.search_mode`:
+            • Se era False, diventa True
+            • Se era True, diventa False
+
+        Parametri:
+        Nessuno
+
+        Valore di ritorno:
+        None
+        """
+        self.search_mode = not self.search_mode
+        keyword = self.search_entry.get().strip()
+        self.refresh_table(keyword)

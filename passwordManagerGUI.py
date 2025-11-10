@@ -1,4 +1,3 @@
-
 import customtkinter as ctk
 import tkinter.ttk as ttk
 from tkinter import messagebox
@@ -17,7 +16,6 @@ class PasswordManagerGUI:
         - Inizializza la finestra principale con titolo "Password Manager"
         - Definisce i frame principali (login, main, tabella, form di aggiunta e aggiornamento)
         - Avvia la costruzione dell’interfaccia di login
-        - La variabile search_mode serve per capire se costruire il main frame con tutti i servizi o solo quelli cercati
         '''
         self.root = root
         self.manager = manager
@@ -28,7 +26,6 @@ class PasswordManagerGUI:
         self.table = None
         self.add_form = None
         self.update_form = None
-        self.search_mode: bool = False
 
 
         self.build_login_frame()
@@ -114,7 +111,7 @@ class PasswordManagerGUI:
         top_bar.pack(fill="x", pady=5, padx=5)
 
         # Pulsante "🔍" a sinistra
-        add_button_left = ctk.CTkButton(top_bar, text="🔍", width=40, command=self.change_search_mode)
+        add_button_left = ctk.CTkButton(top_bar, text="🔍", width=40, command=self.search_mode)
         add_button_left.pack(side="left", padx=0)
 
         # Campo di testo accanto al pulsante di sinistra
@@ -223,32 +220,57 @@ class PasswordManagerGUI:
         else:
             messagebox.showerror("Errore", "Compila tutti i campi")
 
-    def refresh_table(self, keyword: str = "")-> None:
+    def refresh_table(self)-> None:
         """
         Aggiorna la tabella dei servizi mostrata nell'interfaccia.
 
         Funzionamento:
-        - Cancella tutte le righe attualmente presenti nella tabella.
-        - Se `search_mode` è attivo:
-            • recupera solo i servizi che corrispondono al testo passato in `keyword`
-        - Altrimenti recupera tutti i servizi dell'utente.
+        - Cancella tutte le righe attualmente presenti nella tabella
+        - Recupera tutti i servizi dell'utente
         - Per ogni servizio trovato:
             • Inserisce una nuova riga nella tabella
             • Mostra il nome del servizio
             • Mostra la password oscurata con asterischi
 
         Parametri:
-        keyword (str, opzionale) -> testo da cercare nei servizi; default è stringa vuota
+        Nessuno
 
         Valore di ritorno:
         None
         """
         for row in self.table.get_children():
             self.table.delete(row)
-        if self.search_mode:
-            services = self.manager.search_services(keyword)
-        else:
-            services = self.manager.list_services()
+
+        services = self.manager.list_services()
+        if services:
+            for service_id, service_name in services:
+                pwd =  "*****"
+                self.table.insert("", "end", values=(service_name, pwd))
+
+
+    def search_mode(self) -> None:
+        """
+        Filtra e mostra i servizi che contengono il testo inserito.
+
+        Funzionamento:
+        - Cancella tutte le righe attualmente presenti nella tabella
+        - Recupera il testo inserito nel campo di ricerca
+        - Cerca i servizi che contengono il testo specificato
+        - Per ogni servizio trovato:
+            • Inserisce una nuova riga nella tabella
+            • Mostra il nome del servizio
+            • Mostra la password oscurata con asterischi
+
+        Parametri:
+        Nessuno
+
+        Valore di ritorno:
+        None
+        """
+        for row in self.table.get_children():
+            self.table.delete(row)
+        keyword = self.search_entry.get().strip()
+        services = self.manager.search_services(keyword)
         if services:
             for service_id, service_name in services:
                 pwd =  "*****"
@@ -501,6 +523,7 @@ class PasswordManagerGUI:
 
         Valore di ritorno:
         None
+
         '''
         selected = self.table.selection()
         if not selected:
@@ -532,21 +555,3 @@ class PasswordManagerGUI:
         messagebox.showinfo("Logout", "Logout effettuato")
         self.build_login_frame()
 
-    def change_search_mode(self) -> None:
-        """
-        Attiva o disattiva la modalità ricerca dell'interfaccia.
-
-        Funzionamento:
-        - Inverte il valore booleano di `self.search_mode`:
-            • Se era False, diventa True
-            • Se era True, diventa False
-
-        Parametri:
-        Nessuno
-
-        Valore di ritorno:
-        None
-        """
-        self.search_mode = not self.search_mode
-        keyword = self.search_entry.get().strip()
-        self.refresh_table(keyword)

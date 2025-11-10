@@ -74,14 +74,14 @@ class PasswordManager:
             result = self.db.execute_query(query, (username,))
 
             if not result:
-                print(" Credenziali non valide!")
+                print("Credenziali non valide!")
                 return False
 
             user_id, stored_hash, salt = result[0]  # salt è bytes (VARBINARY)
 
             # Verifico la password usando hash + salt
             if not SecurityUtils.verify_password(master_password, salt, stored_hash):
-                print(" Credenziali non valide!")
+                print("Credenziali non valide!")
                 return False
 
             # Login OK: salvo id utente
@@ -111,7 +111,7 @@ class PasswordManager:
         bool -> True se la password è stata salvata, False altrimenti
         '''
         if not self.cipher or not self.user_id:
-            print(" Devi prima effettuare il login!")
+            print("Devi prima effettuare il login!")
             return False
         
         try:
@@ -130,11 +130,11 @@ class PasswordManager:
             self.db.cursor.execute(insert_query, (self.user_id, service, encrypted_pwd))
             self.db.conn.commit()
             
-            print(f" Password per '{service}' salvata con successo!")
+            print(f"Password per '{service}' salvata con successo!")
             return True
     
         except Exception as e:
-            print(f" Errore durante il salvataggio: {e}")
+            print(f"Errore durante il salvataggio: {e}")
             return False
     
     def get_password(self, service: str) -> Optional[str]:
@@ -149,7 +149,7 @@ class PasswordManager:
         None -> se non trovata o in caso di errore
         '''
         if not self.cipher or not self.user_id:
-            print(" Devi prima effettuare il login!")
+            print("Devi prima effettuare il login!")
             return None
         
         try:
@@ -167,15 +167,17 @@ class PasswordManager:
             print(f" Errore durante il recupero: {e}")
             return None
     
-    def list_services(self) -> list[tuple[Any, ...]]:
+    def list_services(self) -> list[tuple[int, str]]:
         '''
         Elenca tutti i servizi salvati.
 
         Valore di ritorno:
-        list[tuple] -> lista di tuple contenenti id e nome del servizio
+        list[tuple[int, str]] -> lista di tuple dove ogni tupla contiene:
+            - id (int): identificativo univoco del servizio
+            - service (str): nome del servizio
         '''
         if not self.user_id:
-            print(" Devi prima effettuare il login!")
+            print("Devi prima effettuare il login!")
             return []
         
         try:
@@ -185,16 +187,18 @@ class PasswordManager:
         except Exception as e:
             print(f" Errore durante il recupero dei servizi: {e}")
             return []
-        
-    def search_services(self, keyword: str) -> list[tuple[Any, ...]]:
+
+    def search_services(self, keyword: str) -> list[tuple[int, str]]:
         '''
         Cerca servizi salvati che contengono una determinata parola chiave.
 
         Parametri:
-        keyword (str) -> testo da cercare all’interno del nome del servizio
+        keyword (str) -> testo da cercare all'interno del nome del servizio
 
         Valore di ritorno:
-        list[tuple] -> lista di tuple contenenti id e nome del servizio
+        list[tuple[int, str]] -> lista di tuple dove ogni tupla contiene:
+            - id (int): identificativo univoco del servizio
+            - service (str): nome del servizio che contiene la parola chiave
         '''
         if not self.user_id:
             print("Devi prima effettuare il login!")

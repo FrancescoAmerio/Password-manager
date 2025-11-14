@@ -69,4 +69,5 @@ class SecurityUtils:
         bool -> True se combaciano, False altrimenti
         '''
         candidate_hash = SecurityUtils.hash_password(password, salt)
+        # Impiega sempre lo stesso tempo per prevenire attacchi di timing
         return hmac.compare_digest(candidate_hash, stored_hash)

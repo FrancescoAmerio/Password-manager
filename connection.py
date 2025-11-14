@@ -3,6 +3,7 @@ from mysql.connector import Error
 from typing import Optional, Any
 
 class DatabaseConnection:
+    # Modificare le credenziali di connessione in base alle proprie impostazioni.
     def __init__(self, host: str = "localhost", user: str = "ITS_2025", password: str = "ITS_2025", database: str = "password_manager") -> None:
         '''
         Costruttore della classe DatabaseConnection.

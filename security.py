@@ -1,9 +1,9 @@
 import base64
-import hashlib
 import os
-import hmac
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 
 
 class SecurityUtils:
@@ -42,32 +42,36 @@ class SecurityUtils:
         return key
 
     @staticmethod
-    def hash_password(password: str, salt: bytes) -> str:
+    def hash_password(password: str) -> str:
         '''
-        Calcola l'hash SHA-256 di una password usando un salt.
+        Calcola l'hash Argon2 della password.
+
+        Argon2 include automaticamente il salt nell'hash serializzato.
 
         Parametri:
         password (str) -> password in chiaro
-        salt (bytes) -> salt da usare per l'hash
 
         Valore di ritorno:
-        str -> hash esadecimale della password salata
+        str -> hash Argon2 serializzato (include salt + hash)
         '''
-        return hashlib.sha256(salt + password.encode()).hexdigest()
+        ph = PasswordHasher(time_cost=2, memory_cost=65536, parallelism=4)
+        return ph.hash(password)
     
     @staticmethod
-    def verify_password(password: str, salt: bytes, stored_hash: str) -> bool:
+    def verify_password(password: str, stored_hash: str) -> bool:
         '''
-        Verifica se una password corrisponde a un hash esistente.
+        Verifica se una password corrisponde a un hash Argon2.
 
         Parametri:
         password (str) -> password in chiaro inserita dall'utente
-        salt (bytes) -> salt salvato nel DB
-        stored_hash (str) -> hash esadecimale salvato nel DB
+        stored_hash (str) -> hash Argon2 salvato nel DB
 
         Valore di ritorno:
         bool -> True se combaciano, False altrimenti
         '''
-        candidate_hash = SecurityUtils.hash_password(password, salt)
-        # Impiega sempre lo stesso tempo per prevenire attacchi di timing
-        return hmac.compare_digest(candidate_hash, stored_hash)
+        ph = PasswordHasher(time_cost=2, memory_cost=65536, parallelism=4)
+        try:
+            ph.verify(stored_hash, password)
+            return True
+        except VerifyMismatchError:
+            return False

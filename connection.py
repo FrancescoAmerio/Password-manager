@@ -1,23 +1,27 @@
+import os
 import mysql.connector
 from mysql.connector import Error
+from dotenv import load_dotenv
 from typing import Optional, Any
 
 class DatabaseConnection:
-    # Modificare le credenziali di connessione in base alle proprie impostazioni.
-    def __init__(self, host: str = "localhost", user: str = "ITS_2025", password: str = "ITS_2025", database: str = "password_manager") -> None:
+    # Credenziali caricate da .env (non hardcoded)
+    def __init__(self, host: str = None, user: str = None, password: str = None, database: str = None) -> None:
         '''
         Costruttore della classe DatabaseConnection.
+        Legge credenziali da variabili d'ambiente (.env).
         
         Parametri:
-        host (str) -> indirizzo del server del database
-        user (str) -> nome utente per la connessione
-        password (str) -> password per la connessione
-        database (str) -> nome del database da utilizzare
+        host (str) -> indirizzo del server del database (default: env DB_HOST)
+        user (str) -> nome utente per la connessione (default: env DB_USER)
+        password (str) -> password per la connessione (default: env DB_PASSWORD)
+        database (str) -> nome del database da utilizzare (default: env DB_NAME)
         '''
-        self.host = host
-        self.user = user
-        self.password = password
-        self.database = database
+        load_dotenv()
+        self.host = host or os.getenv("DB_HOST")
+        self.user = user or os.getenv("DB_USER")
+        self.password = password or os.getenv("DB_PASSWORD")
+        self.database = database or os.getenv("DB_NAME")
         self.conn = None
         self.cursor = None
 

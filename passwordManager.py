@@ -39,13 +39,13 @@ class PasswordManager:
                 print(f"Username '{username}' già esistente!")
                 return False
 
-            # 1) genera un salt casuale
+            # 1) genera un salt casuale (per Fernet key derivation)
             salt = SecurityUtils.generate_salt()
 
-            # 2) calcola l'hash usando password + salt
-            hashed_pwd = SecurityUtils.hash_password(master_password, salt)
+            # 2) calcola l'hash usando password (Argon2 include salt interno)
+            hashed_pwd = SecurityUtils.hash_password(master_password)
 
-            # 3) inserisce il nuovo utente con hash + salt
+            # 3) inserisce il nuovo utente con hash + salt (salt per derive_key)
             insert_query = "INSERT INTO users (username, password, salt) VALUES (%s, %s, %s)"
             self.db.cursor.execute(insert_query, (username, hashed_pwd, salt))
             self.db.conn.commit()
@@ -79,8 +79,8 @@ class PasswordManager:
 
             user_id, stored_hash, salt = result[0]  # salt è bytes (VARBINARY)
 
-            # Verifico la password usando hash + salt
-            if not SecurityUtils.verify_password(master_password, salt, stored_hash):
+            # Verifico la password (Argon2 contiene salt internamente)
+            if not SecurityUtils.verify_password(master_password, stored_hash):
                 print("Credenziali non valide!")
                 return False
 

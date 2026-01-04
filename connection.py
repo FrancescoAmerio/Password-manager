@@ -12,10 +12,10 @@ class DatabaseConnection:
         Legge credenziali da variabili d'ambiente (.env).
         
         Parametri:
-        host (str) -> indirizzo del server del database (default: env DB_HOST)
-        user (str) -> nome utente per la connessione (default: env DB_USER)
-        password (str) -> password per la connessione (default: env DB_PASSWORD)
-        database (str) -> nome del database da utilizzare (default: env DB_NAME)
+        host (str) -> indirizzo del server del database
+        user (str) -> nome utente per la connessione
+        password (str) -> password per la connessione
+        database (str) -> nome del database da utilizzare
         '''
         load_dotenv()
         self.host = host or os.getenv("DB_HOST")

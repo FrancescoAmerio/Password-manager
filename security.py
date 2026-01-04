@@ -46,8 +46,6 @@ class SecurityUtils:
         '''
         Calcola l'hash Argon2 della password.
 
-        Argon2 include automaticamente il salt nell'hash serializzato.
-
         Parametri:
         password (str) -> password in chiaro
 

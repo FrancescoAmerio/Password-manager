@@ -1,9 +1,19 @@
 # ---------------- MAIN ----------------
+import os
+import sys
+
 from connection import DatabaseConnection
 from passwordManagerGUI import PasswordManagerGUI
 from passwordManager import PasswordManager
 import customtkinter as ctk
 
+def resource_path(relative_path):
+    """ Ottiene il percorso assoluto delle risorse"""
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 def main() -> None:
     '''
@@ -18,6 +28,7 @@ def main() -> None:
     Valore di ritorno:
     None
     '''
+
     db = DatabaseConnection()
     db.open()
     pm = PasswordManager(db)

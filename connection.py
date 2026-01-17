@@ -1,81 +1,99 @@
 import os
-import mysql.connector
-from mysql.connector import Error
-from dotenv import load_dotenv
+import sqlite3
+from pathlib import Path
 from typing import Optional, Any
 
 class DatabaseConnection:
-    # Credenziali caricate da .env (non hardcoded)
-    def __init__(self, host: str = None, user: str = None, password: str = None, database: str = None) -> None:
-        '''
-        Costruttore della classe DatabaseConnection.
-        Legge credenziali da variabili d'ambiente (.env).
-        
-        Parametri:
-        host (str) -> indirizzo del server del database
-        user (str) -> nome utente per la connessione
-        password (str) -> password per la connessione
-        database (str) -> nome del database da utilizzare
-        '''
-        load_dotenv()
-        self.host = host or os.getenv("DB_HOST")
-        self.user = user or os.getenv("DB_USER")
-        self.password = password or os.getenv("DB_PASSWORD")
-        self.database = database or os.getenv("DB_NAME")
-        self.conn = None
-        self.cursor = None
+    def __init__(self, db_path: str | None = None) -> None:
+        if db_path is None:
+            appdata = os.environ.get("APPDATA", str(Path.home()))
+            app_dir = Path(appdata) / "PasswordManager"
+            app_dir.mkdir(parents=True, exist_ok=True)
+            db_path = str(app_dir / "passwords.db")
+
+        self.db_path = db_path
+        self.conn: sqlite3.Connection | None = None
+        self.cursor: sqlite3.Cursor | None = None
 
     def open(self) -> None:
-        '''
-        Apre la connessione al database.
+        self.conn = sqlite3.connect(self.db_path)
+        self.conn.row_factory = sqlite3.Row
+        self.cursor = self.conn.cursor()
 
-        Valore di ritorno:
-        None
-        '''
-        try:
-            self.conn = mysql.connector.connect(
-                host=self.host,
-                user=self.user,
-                password=self.password,
-                database=self.database
-            )
-            if self.conn.is_connected():
-                self.cursor = self.conn.cursor()
-                print("Connection established successfully!")
-        except Error as e:
-            print("Connection error:", e)
+        # PRAGMA utili
+        self.cursor.execute("PRAGMA foreign_keys = ON;")
+        self.cursor.execute("PRAGMA journal_mode = WAL;")
 
-    def execute_query(self, query: str, params: Optional[tuple[Any, ...]] = None) -> Optional[list[tuple[Any, ...]]]:
-        '''
-        Esegue una query SQL sul database.
+        self._init_schema()
+        self.conn.commit()
 
-        Parametri:
-        query (str) -> stringa contenente la query SQL
-        params (tuple[Any, ...] | None) -> parametri opzionali per la query
+        print(f"SQLite DB opened: {self.db_path}")
 
-        Valore di ritorno:
-        list[tuple[Any, ...]] -> risultati della query
-        None -> se la connessione non è attiva o si verifica un errore
-        '''
-        if self.conn is None or not self.conn.is_connected():
+    def _init_schema(self) -> None:
+        assert self.conn is not None and self.cursor is not None
+
+        # users
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                password TEXT NOT NULL,
+                salt BLOB NOT NULL
+            );
+        """)
+
+        # user_credentials
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS user_credentials (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                service TEXT NOT NULL,
+                password TEXT NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE(user_id, service)
+            );
+        """)
+
+        self.cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_user_credentials_user_id
+            ON user_credentials(user_id);
+        """)
+        self.cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_user_credentials_service
+            ON user_credentials(service);
+        """)
+
+    def execute_query(
+        self,
+        query: str,
+        params: Optional[tuple[Any, ...]] = None,
+        *,
+        fetch: bool = True,
+        commit: bool = False
+    ) -> Optional[list[Any]]:
+        if self.conn is None or self.cursor is None:
             print("Connection is not active.")
             return None
+
         try:
             self.cursor.execute(query, params or ())
-            return self.cursor.fetchall()
-        except Error as e:
+            if commit:
+                self.conn.commit()
+            if fetch:
+                return self.cursor.fetchall()
+            return []
+        except sqlite3.Error as e:
             print("Error while executing query:", e)
             return None
 
     def close(self) -> None:
-        '''
-        Chiude la connessione al database.
-
-        Valore di ritorno:
-        None
-        '''
-        if self.cursor:
-            self.cursor.close()
-        if self.conn and self.conn.is_connected():
-            self.conn.close()
+        try:
+            if self.cursor is not None:
+                self.cursor.close()
+                self.cursor = None
+            if self.conn is not None:
+                self.conn.close()
+                self.conn = None
             print("Connection closed.")
+        except Exception:
+            pass

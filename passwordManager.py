@@ -32,7 +32,7 @@ class PasswordManager:
                 return False
 
             # Verifica se l'utente esiste già
-            check_query = "SELECT id FROM users WHERE username = %s"
+            check_query = "SELECT id FROM users WHERE username = ?"
             result = self.db.execute_query(check_query, (username,))
 
             if result:
@@ -46,7 +46,7 @@ class PasswordManager:
             hashed_pwd = SecurityUtils.hash_password(master_password)
 
             # 3) inserisce il nuovo utente con hash + salt (salt per derive_key)
-            insert_query = "INSERT INTO users (username, password, salt) VALUES (%s, %s, %s)"
+            insert_query = "INSERT INTO users (username, password, salt) VALUES (?, ?, ?)"
             self.db.cursor.execute(insert_query, (username, hashed_pwd, salt))
             self.db.conn.commit()
 
@@ -70,7 +70,7 @@ class PasswordManager:
         '''
         try:
             # Recupero id, hash e salt per quello username
-            query = "SELECT id, password, salt FROM users WHERE username = %s"
+            query = "SELECT id, password, salt FROM users WHERE username = ?"
             result = self.db.execute_query(query, (username,))
 
             if not result:
@@ -116,7 +116,7 @@ class PasswordManager:
         
         try:
             # Controllo se il servizio esiste già per questo utente
-            check_query = "SELECT id FROM user_credentials WHERE user_id = %s AND service = %s"
+            check_query = "SELECT id FROM user_credentials WHERE user_id = ? AND service = ?"
             result = self.db.execute_query(check_query, (self.user_id, service))
             
             if result and len(result) > 0:
@@ -126,7 +126,7 @@ class PasswordManager:
             # Inserimento nuova password
             encrypted_pwd = self.cipher.encrypt(password.encode()).decode()
             
-            insert_query = "INSERT INTO user_credentials (user_id, service, password) VALUES (%s, %s, %s)"
+            insert_query = "INSERT INTO user_credentials (user_id, service, password) VALUES (?, ?, ?)"
             self.db.cursor.execute(insert_query, (self.user_id, service, encrypted_pwd))
             self.db.conn.commit()
             
@@ -153,7 +153,7 @@ class PasswordManager:
             return None
         
         try:
-            query = "SELECT password FROM user_credentials WHERE user_id = %s AND service = %s"
+            query = "SELECT password FROM user_credentials WHERE user_id = ? AND service = ?"
             result = self.db.execute_query(query, (self.user_id, service))
             
             if result and len(result) > 0:
@@ -181,7 +181,7 @@ class PasswordManager:
             return []
         
         try:
-            query = "SELECT id, service FROM user_credentials WHERE user_id = %s ORDER BY service"
+            query = "SELECT id, service FROM user_credentials WHERE user_id = ? ORDER BY service"
             result = self.db.execute_query(query, (self.user_id,))
             return result if result else []
         except Exception as e:
@@ -208,7 +208,7 @@ class PasswordManager:
             query = """
                 SELECT id, service 
                 FROM user_credentials 
-                WHERE user_id = %s AND service LIKE %s 
+                WHERE user_id = ? AND service LIKE ? 
                 ORDER BY service
             """
             # '%keyword%' permette di cercare la parola anche nel mezzo del nome
@@ -242,7 +242,7 @@ class PasswordManager:
         try:
             encrypted_pwd = self.cipher.encrypt(new_password.encode()).decode()
             
-            query = "UPDATE user_credentials SET password = %s WHERE user_id = %s AND service = %s"
+            query = "UPDATE user_credentials SET password = ? WHERE user_id = ? AND service = ?"
             self.db.cursor.execute(query, (encrypted_pwd, self.user_id, service))
             self.db.conn.commit()
             
@@ -271,7 +271,7 @@ class PasswordManager:
             return False
         
         try:
-            query = "DELETE FROM user_credentials WHERE user_id = %s AND service = %s"
+            query = "DELETE FROM user_credentials WHERE user_id = ? AND service = ?"
             self.db.cursor.execute(query, (self.user_id, service))
             self.db.conn.commit()
             

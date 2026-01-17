@@ -210,9 +210,7 @@ class PasswordManagerGUI:
         pwd = self.new_pwd_entry.get()
         if service and pwd:
             added = self.manager.add_password(service, pwd)
-            if added:
-                messagebox.showinfo("OK", f"Password per {service} salvata!")
-            else:
+            if not added:
                 messagebox.showinfo("Errore", f"Password per {service} già esistente!")
             self.refresh_table()
             self.add_form.destroy()
@@ -317,7 +315,6 @@ class PasswordManagerGUI:
         username = self.username_entry.get()
         password = self.password_entry.get()
         if self.manager.login(username, password):
-            messagebox.showinfo("Successo", f"Login effettuato come {username}")
             self.build_main_frame()
         else:
             messagebox.showerror("Errore", "Credenziali non valide")
@@ -460,8 +457,6 @@ class PasswordManagerGUI:
         self.root.clipboard_clear()
         self.root.clipboard_append(pwd)
         self.root.update()
-        if(pwd):
-            messagebox.showinfo("Copiata", "Password copiata negli appunti")
 
 
     def save_updated_password(self)-> None:
@@ -497,7 +492,6 @@ class PasswordManagerGUI:
         new_pwd = self.update_pwd_entry.get()
         if new_pwd:
             self.manager.update_password(service, new_pwd)
-            messagebox.showinfo("Successo", f"Password per {service} aggiornata!")
             self.refresh_table()
             self.update_form.destroy()
             self.update_form = None
@@ -552,6 +546,5 @@ class PasswordManagerGUI:
         '''
         self.manager.user_id = None
         self.manager.cipher = None
-        messagebox.showinfo("Logout", "Logout effettuato")
         self.build_login_frame()
 
